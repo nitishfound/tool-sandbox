@@ -1,0 +1,32 @@
+# Least-privilege policy for a "research assistant" agent.
+# It may read docs, write reports into out/, fetch two public APIs, run approved scripts,
+# and email colleagues only after a human says yes. Everything else is denied.
+agent: research-agent
+root: ../examples/workspace          # relative to this policy file
+
+tools:
+  read_file:
+    paths: ["docs/**", "out/**"]
+    max_bytes: 200000
+  list_dir:
+    paths: ["docs", "docs/**", "out", "out/**"]
+  write_file:
+    paths: ["out/**"]                 # docs/ stays read-only
+    max_bytes: 100000
+  http_get:
+    domains: ["api.github.com", "*.wikipedia.org", "*.partner-api.example"]
+    max_bytes: 500000
+    timeout_s: 10
+  run_command:
+    commands:
+      python: '^scripts/[a-z_]+\.py$'   # only our own scripts, no "-c", no flags
+    timeout_s: 10
+  send_email:
+    recipients: ["*@company.example"]
+    require_approval: true
+
+budgets:
+  max_calls: 30
+  per_tool:
+    http_get: 10
+    send_email: 3
